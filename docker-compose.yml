@@ -1,0 +1,92 @@
+services:
+  # Relational database storing students, classes, triggers, and email logs
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: orah
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+  # In-memory data store acting as the message broker for BullMQ
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Main backend Express server handling attendance, UI requests, and triggering background jobs
+  api:
+    image: node:20-slim
+    working_dir: /app/api
+    volumes:
+      - .:/app
+      - api_node_modules:/app/api/node_modules
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=orah
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_NAME=email-job
+    ports:
+      - "3000:3000"
+    command: sh -c "cd ../shared && npm install && npm run build && cd ../api && npm install && npm run build && npm run cleanup && npm run dev"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Frontend Vite React application serving the user interface
+  ui:
+    image: node:20-slim
+    working_dir: /app/ui
+    volumes:
+      - .:/app
+      - ui_node_modules:/app/ui/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:3000
+    ports:
+      - "5173:5173"
+    command: sh -c "rm -f package-lock.json && npm install --include=optional && npm run dev -- --host 0.0.0.0"
+    depends_on:
+      api:
+        condition: service_started
+
+  # Background microservice worker consuming BullMQ jobs to send emails via Nodemailer
+  email:
+    image: node:20-slim
+    working_dir: /app/email
+    volumes:
+      - ./email:/app/email
+      - email_node_modules:/app/email/node_modules
+    env_file:
+      - ./email/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - QUEUE_NAME=email-job
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+  api_node_modules:
+  ui_node_modules:
+  email_node_modules:

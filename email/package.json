@@ -1,0 +1,29 @@
+{
+  "name": "email",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "npm run clean && npm run build && npm start",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bullmq": "^6.3.6",
+    "dotenv": "^17.4.2",
+    "ioredis": "^6.0.0",
+    "nodemailer": "^10.0.10"
+  },
+  "devDependencies": {
+    "@types/node": "^26.5.1",
+    "@types/nodemailer": "^8.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^7.0.2"
+  }
+}
