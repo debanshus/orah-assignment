@@ -30,6 +30,13 @@ done
 
 if [ -z "$REAL_FAILURES" ]; then
   echo "✅ All services started and initialized successfully!"
+  echo ""
+  echo "🌐 Access your services here:"
+  echo "   - UI (Frontend)    : http://localhost:5173"
+  echo "   - API (Backend)    : http://localhost:3000"
+  echo "   - Swagger API Docs : http://localhost:3000/api-docs"
+  echo "   - Database (MySQL) : localhost:3306"
+  echo "   - Redis Broker     : localhost:6379"
 else
   echo "❌ The following services failed to start (Exit Code != 0):"
   for service in $REAL_FAILURES; do
